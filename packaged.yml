@@ -6,7 +6,7 @@ Resources:
     Properties:
       Handler: handler.router
       Runtime: nodejs12.x
-      CodeUri: s3://sam-serverless-project-homework/a47506a334e27dbaf8cdcebd6e88ad74
+      CodeUri: s3://sam-serverless-project-homework/aa5b575f40f30b18cb6279004f5c740f
       Events:
         transations:
           Type: Api
@@ -39,7 +39,7 @@ Resources:
       FunctionName: hb_processor
       Handler: hb_processor.router
       Runtime: nodejs12.x
-      CodeUri: s3://sam-serverless-project-homework/a47506a334e27dbaf8cdcebd6e88ad74
+      CodeUri: s3://sam-serverless-project-homework/aa5b575f40f30b18cb6279004f5c740f
       Events:
         MySQSEvent:
           Type: SQS
@@ -67,7 +67,7 @@ Resources:
       FunctionName: nlb_processor
       Handler: nlb_processor.router
       Runtime: nodejs12.x
-      CodeUri: s3://sam-serverless-project-homework/a47506a334e27dbaf8cdcebd6e88ad74
+      CodeUri: s3://sam-serverless-project-homework/aa5b575f40f30b18cb6279004f5c740f
       Events:
         MySQSEvent:
           Type: SQS
@@ -95,7 +95,7 @@ Resources:
       FunctionName: transaction_creator
       Handler: transaction_creator.router
       Runtime: nodejs12.x
-      CodeUri: s3://sam-serverless-project-homework/a47506a334e27dbaf8cdcebd6e88ad74
+      CodeUri: s3://sam-serverless-project-homework/aa5b575f40f30b18cb6279004f5c740f
       Events:
         MySQSEvent:
           Type: SQS
@@ -109,6 +109,7 @@ Resources:
           Effect: Allow
           Action:
           - dynamodb:putItem
+          - dynamodb:Scan
           Resource:
           - Fn::Join:
             - ''
@@ -123,7 +124,7 @@ Resources:
       FunctionName: retriever
       Handler: retriever.router
       Runtime: nodejs12.x
-      CodeUri: s3://sam-serverless-project-homework/a47506a334e27dbaf8cdcebd6e88ad74
+      CodeUri: s3://sam-serverless-project-homework/aa5b575f40f30b18cb6279004f5c740f
       Events:
         transations:
           Type: Api
