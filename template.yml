@@ -1,0 +1,161 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: 'AWS::Serverless-2016-10-31'
+
+Resources:
+  router:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      Handler: handler.router
+      Runtime: nodejs12.x
+      CodeUri: .
+      Events:
+        transations:
+          Type: Api
+          Properties:
+            Path: /messages
+            Method: POST
+      Policies:
+      - Statement:
+          Effect: Allow
+          Action:
+          - 'sqs:SendMessage'
+          Resource:
+          - 'Fn::Join':
+              - ''
+              - - 'arn:aws:sqs:'
+                - Ref: 'AWS::Region'
+                - ':'
+                - Ref: 'AWS::AccountId'
+                - ':hb_message_processing_queue'
+          - 'Fn::Join':
+              - ''
+              - - 'arn:aws:sqs:'
+                - Ref: 'AWS::Region'
+                - ':'
+                - Ref: 'AWS::AccountId'
+                - ':nlb_message_processing_queue'    
+  hbProcessor:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: hb_processor
+      Handler: hb_processor.router
+      Runtime: nodejs12.x
+      CodeUri: .
+      Events:
+        MySQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt SQSqueue1.Arn
+      Policies:
+      - Statement:
+          Effect: Allow
+          Action:
+          - 'sqs:SendMessage'
+          Resource:
+          - 'Fn::Join':
+              - ''
+              - - 'arn:aws:sqs:'
+                - Ref: 'AWS::Region'
+                - ':'
+                - Ref: 'AWS::AccountId'
+                - ':parsed_messages'
+  nlbProcessor:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: nlb_processor
+      Handler: nlb_processor.router
+      Runtime: nodejs12.x
+      CodeUri: .
+      Events:
+        MySQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt SQSqueue2.Arn
+      Policies:
+      - Statement:
+          Effect: Allow
+          Action:
+          - 'sqs:SendMessage'
+          Resource:
+          - 'Fn::Join':
+              - ''
+              - - 'arn:aws:sqs:'
+                - Ref: 'AWS::Region'
+                - ':'
+                - Ref: 'AWS::AccountId'
+                - ':parsed_messages'         
+  transactionCreator:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: transaction_creator
+      Handler: transaction_creator.router
+      Runtime: nodejs12.x
+      CodeUri: .
+      Events:
+        MySQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt SQSqueue3.Arn
+      Policies:
+      - Statement:
+          Effect: Allow
+          Action:
+          - 'dynamodb:putItem'
+          - 'dynamodb:Scan'
+          Resource:
+          - 'Fn::Join':
+              - ''
+              - - 'arn:aws:dynamodb:'
+                - Ref: 'AWS::Region'
+                - ':'
+                - Ref: 'AWS::AccountId'
+                - ':table/transactions'    
+  retriever:
+    Type: 'AWS::Serverless::Function'
+    Properties:
+      FunctionName: retriever
+      Handler: retriever.router
+      Runtime: nodejs12.x
+      CodeUri: .
+      Events:
+        transations:
+          Type: Api
+          Properties:
+            Path: /messages
+            Method: GET
+      Policies:
+      - Statement:
+          Effect: Allow
+          Action:
+          - 'dynamodb:GetItem'
+          Resource:
+          - 'Fn::Join':
+              - ''
+              - - 'arn:aws:dynamodb:'
+                - Ref: 'AWS::Region'
+                - ':'
+                - Ref: 'AWS::AccountId'
+                - ':table/transactions'                                               
+  SQSqueue1: 
+    Type: AWS::SQS::Queue
+    Properties: 
+      QueueName: "hb_message_processing_queue"    
+  SQSqueue2: 
+    Type: AWS::SQS::Queue
+    Properties: 
+      QueueName: "nlb_message_processing_queue"                
+  SQSqueue3: 
+    Type: AWS::SQS::Queue
+    Properties: 
+      QueueName: "parsed_messages"
+  DynamoDBTable:
+    Type: 'AWS::DynamoDB::Table'
+    Properties:
+      TableName: transactions
+      AttributeDefinitions:
+        - AttributeName: uuid
+          AttributeType: S
+      KeySchema:
+        - AttributeName: uuid
+          KeyType: HASH
+      BillingMode: PAY_PER_REQUEST
